@@ -273,22 +273,7 @@ if %timeStampINI%==0 (
     echo Don't turn this on unless you really want to see the timestamps.
     echo.
     echo -------------------------------------------------------------------------------
-    echo ---------------------------------------------    --mp4box=*) mp4box=${1#*=} && shift ;;
-    --rtmpdump=*) rtmpdump=${1#*=} && shift ;;
-    --vpx=*) vpx=${1#*=} && shift ;;
-    --x264=*) x264=${1#*=} && shift ;;
-    --x265=*) x265=${1#*=} && shift ;;
-    --other265=*) other265=${1#*=} && shift ;;
-    --flac=*) flac=${1#*=} && shift ;;
-    --fdkaac=*) fdkaac=${1#*=} && shift ;;
-    --mediainfo=*) mediainfo=${1#*=} && shift ;;
-    --sox=*) sox=${1#*=} && shift ;;
-    --ffmpeg=*) ffmpeg=${1#*=} && shift ;;
-    --ffmpegUpdate=*) ffmpegUpdate=${1#*=} && shift ;;
-    --ffmpegChoice=*) ffmpegChoice=${1#*=} && shift ;;
-    --mplayer=*) mplayer=${1#*=} && shift ;;
-    --mpv=*) mpv=${1#*=} && shift ;;
-    --deleteSource=*) deleteSource=${1#*=} && shift ;;----------------------------------
+    echo -------------------------------------------------------------------------------
     set /P timeStampF="Show Timestamps: "
 ) else set timeStampF=%timeStampINI%
 
@@ -726,6 +711,7 @@ goto :EOF
     echo.GIT_GUI_LIB_DIR="$(cygpath -w /usr/share/git-gui/lib)"
     echo.export PATH GIT_GUI_LIB_DIR
     echo.stty susp undef
+    echo.export MAKEFLAGS="$cpuCount"
     echo.test -f "$LOCALDESTDIR/etc/custom_profile" ^&^& source "$LOCALDESTDIR/etc/custom_profile"
     echo.cd /trunk
 )>%instdir%\vlc%1\etc\profile2.local
