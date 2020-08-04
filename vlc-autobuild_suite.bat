@@ -101,7 +101,7 @@ set msyspackages=base-devel git p7zip
 
 set mingwpackages=cmake meson dlfcn gcc clang nasm yasm pcre tools-git ninja pkg-config ccache jq
 
-set iniOptions=arch CC linking cores strip pack timeStamp
+set iniOptions=arch CC cores strip pack timeStamp
 
 set deleteIni=0
 set ini=%build%\vlc-autobuild_suite.ini
@@ -165,26 +165,6 @@ if %buildCC% GTR 2 GOTO CC
 if %buildCC%==2 set CC=clang && set CXX=clang++
 if not defined CC set CC=gcc && set CXX=g++
 if %deleteINI%==1 echo.CC=^%buildCC%>>%ini%
-
-:linking
-if %linkingINI%==0 (
-    echo -------------------------------------------------------------------------------
-    echo -------------------------------------------------------------------------------
-    echo.
-    echo. Build static or shared:
-    echo. 1 = static [recommended]
-    echo. 2 = shared
-    echo.
-    echo -------------------------------------------------------------------------------
-    echo -------------------------------------------------------------------------------
-    set /P linkingtype="Linking type: "
-) else set linkingtype=%linkingINI%
-
-if "%linkingtype%"=="" GOTO linking
-if %linkingtype% GTR 2 GOTO linking
-if %linkingtype%==2 set linking=shared
-if not defined linking set linking=static
-if %deleteINI%==1 echo.linking=^%linkingtype%>>%ini%
 
 :numCores
 if %NUMBER_OF_PROCESSORS% EQU 1 ( set coreHalf=1 ) else set /a coreHalf=%NUMBER_OF_PROCESSORS%/2
@@ -598,8 +578,7 @@ rmdir /q testmklink
 
 endlocal & (
 set compileArgs=--cpuCount=%cpuCount% --build32=%build32% --build64=%build64% ^
---stripping=%stripFile% --packing=%packFile% --timeStamp=%timeStamp% ^
---linking=%linking%
+--stripping=%stripFile% --packing=%packFile% --timeStamp=%timeStamp%
     if %build64%==yes ( set "MSYSTEM=MINGW64" ) else set "MSYSTEM=MINGW32"
     set "MSYS2_PATH_TYPE=inherit"
     set "MSYS=%MSYS%"

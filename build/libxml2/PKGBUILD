@@ -60,7 +60,8 @@ build() {
         --build="$MINGW_CHOST" \
         --without-python \
         --with-modules \
-        --enable-"${linking:-static}" \
+        --enable-static \
+        --disable-static \
         --with-threads=win32 \
         CFLAGS="${CFLAGS} -DLIBXML_STATIC_FOR_DLL -DNOLIBTOOL"
     make -j "${cpuCount:-1}"
@@ -69,7 +70,7 @@ build() {
 package() {
     cd "build-$CARCH" || return 1
 
-    make install DESTDIR="${pkgdir}"
+    make install DESTDIR="$pkgdir"
     # License
     install -Dm644 "${srcdir}/${_realname}/COPYING" "${pkgdir}${LOCALDESTDIR}/share/licenses/${_realname}/COPYING"
     # Remove hard coded library path from xlm2-config and libxml-2.0.pc files

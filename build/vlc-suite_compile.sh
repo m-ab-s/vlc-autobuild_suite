@@ -60,13 +60,6 @@ while true; do
         esac
         shift
         ;;
-    --linking=*)
-        case ${1#*=} in
-        shared) linking=shared ;;
-        *) linking=static ;;
-        esac
-        shift
-        ;;
     --) shift && break ;;
     -*) echo "Error, unknown option: '$1'." && exit 1 ;;
     *) break ;;
@@ -77,9 +70,10 @@ ccache=y logging=y
 
 # shellcheck source=/code/media-autobuild_suite/build/media-suite_helper.sh
 source "$LOCALBUILDDIR/media-suite_helper.sh"
+
 # Overwrite certain functions that need extra stuff
 set_title() {
-    printf '\033]0;vlc-autobuild_suite  %s\a' "($bits)${1:+: $1}"
+    printf '\033]0;vlc-autobuild_suite  %s\a' "(${bits:=64bit})${1:+: $1}"
 }
 zip_logs() {
     local failed url
@@ -91,7 +85,7 @@ zip_logs() {
         {
             echo /trunk/vlc-autobuild_suite.bat
             [[ $failed != . ]] && find "$failed" -name "*.log"
-            find . -maxdepth 1 -name "*.stripped.log" -o -name "*_options.txt" -o -name "media-suite_*.sh" -o -name "vlc-suite_*.sh"\
+            find . -maxdepth 1 -name "*.stripped.log" -o -name "*_options.txt" -o -name "media-suite_*.sh" -o -name "vlc-suite_*.sh" \
                 -o -name "last_run" -o -name "vlc-autobuild_suite.ini" -o -name "diagnostics.txt" -o -name "patchedFolders"
         } | sort -uo failedFiles
         7za -mx=9 a logs.zip -- @failedFiles > /dev/null && rm failedFiles
