@@ -28,22 +28,21 @@ sha256sums=('SKIP'
     'e93902af20bee41ca7708280f30a1d087ab8c6f86d18939bdd56789cd1a73531')
 
 # Helper macros to help make tasks easier #
-apply_patch_with_msg() {
+apply_patch_with_msg() (
     for _fname; do
-        msg2 "Applying ${_fname}"
-        patch -Nbp1 -i "${srcdir}/${_fname}"
+        msg2 "Applying $_fname"
+        patch -Nbp1 -i "$srcdir/$_fname"
     done
-}
+)
 
 # =========================================== #
 
 pkgver() {
-    cd "${srcdir}/${_realname}" || return 1
-    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+    printf "r%s.%s" "$(git -C "$srcdir/$_realname" rev-list --count HEAD)" "$(git -C "$srcdir/$_realname" rev-parse --short HEAD)"
 }
 
 prepare() {
-    cd "${_realname}" || return 1
+    cd "$_realname" || return 1
     apply_patch_with_msg \
         0020-fix-warnings.patch \
         0023-fix-sitedir-detection.mingw.patch
@@ -52,8 +51,8 @@ prepare() {
 }
 
 build() {
-    [[ -d build-${CARCH} ]] && rm -rf "build-${CARCH}"
-    mkdir "build-${CARCH}" && cd "build-${CARCH}" || return 1
+    rm -rf "build-$CARCH"
+    mkdir "build-$CARCH" && cd "build-$CARCH" || return 1
     ../${_realname}/configure \
         --prefix="$LOCALDESTDIR" \
         --host="$MINGW_CHOST" \
@@ -68,7 +67,7 @@ build() {
 }
 
 package() {
-    cd "build-${CARCH}" || return 1
+    cd "build-$CARCH" || return 1
 
     make install DESTDIR="${pkgdir}"
     # License
