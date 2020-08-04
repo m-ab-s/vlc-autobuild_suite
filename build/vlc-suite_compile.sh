@@ -117,7 +117,10 @@ cleanup() {
     do_prompt "Try running the build again at a later time."
     case "$-" in
     *i*) return 1 ;;
-    *) exit 1 ;;
+    *)
+        trap - SIGINT EXIT
+        exit 1
+        ;;
     esac
 }
 
