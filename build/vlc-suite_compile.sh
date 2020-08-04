@@ -103,10 +103,30 @@ zip_logs() {
     fi
 }
 
-do_makepkg() (
+cleanup() {
+    [[ -z $build32$build64 ]] && return 1
+    echo "${red}failed. Check the log files under $(pwd -W)"
+    if ${_notrequired:-false}; then
+        echo "This isn't required for anything so we can move on."
+        return 1
+    fi
+    echo "${red}This is required for other packages, so this script will exit.${reset}"
+    create_diagnostic
+    zip_logs
+    echo "Make sure the suite is up-to-date before reporting an issue. It might've been fixed already."
+    do_prompt "Try running the build again at a later time."
+    case "$-" in
+    *i*) return 1 ;;
+    *) exit 1 ;;
+    esac
+}
+
+trap cleanup SIGINT EXIT
+
+do_makepkg() {
     [[ -d $LOCALBUILDDIR/$1 ]] || git -C /trunk checkout "@{u}" -- "${LOCALBUILDDIR#/}/$1"
+    [[ -f $LOCALBUILDDIR/$1/PKGBUILD ]] || return 1
     cd_safe "$LOCALBUILDDIR/$1"
-    [[ -f PKGBUILD ]] || return 1
     case $bits in
     32bit)
         rm -rf ./*-i686-*.log
@@ -117,8 +137,8 @@ do_makepkg() (
         export MINGW_INSTALLS=mingw64
         ;;
     esac
-    makepkg-mingw -siL --noconfirm --needed
-)
+    makepkg-mingw -siL --noconfirm --needed || cleanup
+}
 
 do_simple_print -p "${orange}Warning: We will not accept any issues lacking any form of logs or logs.zip!$reset"
 
@@ -179,23 +199,6 @@ run_builds() {
         buildProcess
     fi
 }
-
-cleanup() {
-    [[ -z $build32$build64 ]] && return 1
-    echo "${red}failed. Check the log files under $(pwd -W)"
-    if ${_notrequired:-false}; then
-        echo "This isn't required for anything so we can move on."
-        return 1
-    fi
-    echo "${red}This is required for other packages, so this script will exit.${reset}"
-    create_diagnostic
-    zip_logs
-    echo "Make sure the suite is up-to-date before reporting an issue. It might've been fixed already."
-    do_prompt "Try running the build again at a later time."
-    exit 1
-}
-
-trap cleanup SIGINT EXIT
 
 cd_safe "$LOCALBUILDDIR"
 run_builds
