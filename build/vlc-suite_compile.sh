@@ -77,8 +77,36 @@ ccache=y logging=y
 
 # shellcheck source=/code/media-autobuild_suite/build/media-suite_helper.sh
 source "$LOCALBUILDDIR/media-suite_helper.sh"
+# Overwrite certain functions that need extra stuff
 set_title() {
     printf '\033]0;vlc-autobuild_suite  %s\a' "($bits)${1:+: $1}"
+}
+zip_logs() {
+    local failed url
+    failed=$(get_first_subdir)
+    strip_ansi "$LOCALBUILDDIR"/*.log
+    rm -f "$LOCALBUILDDIR/logs.zip"
+    (
+        cd "$LOCALBUILDDIR" > /dev/null || do_exit_prompt "Did you delete /build?"
+        {
+            echo /trunk/vlc-autobuild_suite.bat
+            [[ $failed != . ]] && find "$failed" -name "*.log"
+            find . -maxdepth 1 -name "*.stripped.log" -o -name "*_options.txt" -o -name "media-suite_*.sh" -o -name "vlc-suite_*.sh"\
+                -o -name "last_run" -o -name "vlc-autobuild_suite.ini" -o -name "diagnostics.txt" -o -name "patchedFolders"
+        } | sort -uo failedFiles
+        7za -mx=9 a logs.zip -- @failedFiles > /dev/null && rm failedFiles
+    )
+    [[ ! -f $LOCALBUILDDIR/no_logs && -n $build32$build64 ]] &&
+        url="$(cd "$LOCALBUILDDIR" && /usr/bin/curl -sF'file=@logs.zip' https://0x0.st)"
+    echo
+    if [[ $url ]]; then
+        echo "${green}All relevant logs have been anonymously uploaded to $url"
+        echo "${green}Copy and paste ${red}[logs.zip]($url)${green} in the GitHub issue.${reset}"
+    elif [[ -f "$LOCALBUILDDIR/logs.zip" ]]; then
+        echo "${green}Attach $(cygpath -w "$LOCALBUILDDIR/logs.zip") to the GitHub issue.${reset}"
+    else
+        echo "${red}Failed to generate logs.zip!${reset}"
+    fi
 }
 
 do_makepkg() (
@@ -157,6 +185,23 @@ run_builds() {
     fi
 }
 
+cleanup() {
+    [[ -z $build32$build64 ]] && return 1
+    echo "${red}failed. Check the log files under $(pwd -W)"
+    if ${_notrequired:-false}; then
+        echo "This isn't required for anything so we can move on."
+        return 1
+    fi
+    echo "${red}This is required for other packages, so this script will exit.${reset}"
+    create_diagnostic
+    zip_logs
+    echo "Make sure the suite is up-to-date before reporting an issue. It might've been fixed already."
+    do_prompt "Try running the build again at a later time."
+    exit 1
+}
+
+trap cleanup SIGINT EXIT
+
 cd_safe "$LOCALBUILDDIR"
 run_builds
 
@@ -176,6 +221,7 @@ while [[ $new_updates != false ]]; do
 done
 
 clean_suite
+trap - SIGINT EXIT
 do_simple_print -p "${green}Compilation successful.${reset}"
 do_simple_print -p "${green}This window will close automatically in 5 seconds.${reset}"
 sleep 5
