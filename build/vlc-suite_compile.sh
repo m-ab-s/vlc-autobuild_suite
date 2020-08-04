@@ -133,6 +133,7 @@ buildGlobal() {
         do_install upx.exe /opt/bin/upx.exe
     fi
     do_makepkg libxml2
+    do_makepkg zlib
 }
 
 buildAudio() {

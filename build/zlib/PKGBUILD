@@ -1,0 +1,54 @@
+# Maintainer: Christopher Degawa <ccom@randomderp.com>
+
+_realname=zlib
+pkgbase=mingw-w64-${_realname}
+pkgname=("${MINGW_PACKAGE_PREFIX}-${_realname}-git")
+pkgver=1.2.11
+pkgrel=0
+arch=('any')
+pkgdesc="Compression library implementing the deflate compression method found in gzip and PKZIP (git mingw-w64)"
+depends=()
+makedepends=("${MINGW_PACKAGE_PREFIX}-gcc"
+    "${MINGW_PACKAGE_PREFIX}-cmake"
+    "${MINGW_PACKAGE_PREFIX}-ninja")
+options=('staticlibs')
+license=(ZLIB)
+provides=("${MINGW_PACKAGE_PREFIX}-${_realname}")
+conflicts=("${MINGW_PACKAGE_PREFIX}-${_realname}")
+url="https://www.zlib.net/"
+source=("git+https://github.com/madler/zlib.git"
+    "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-zlib/04-fix-largefile-support.patch"
+    "https://raw.githubusercontent.com/microsoft/vcpkg/master/ports/zlib/cmake_dont_build_more_than_needed.patch")
+sha256sums=('SKIP'
+    '3b36fe536a7458af2a9a494d70d24048da10c43423fd620ed93fa0a6ddd14f78'
+    'a51534a0a26593b305b209c87ccfc5ba38d3d35370deeda10dcfc407f12ca3af')
+
+pkgver() {
+    printf "r%s.%s" "$(git -C "$srcdir/$_realname" rev-list --count HEAD)" "$(git -C "$srcdir/$_realname" rev-parse --short HEAD)"
+}
+
+prepare() {
+    grep -A 24 '^  Copyright' "$srcdir/$_realname/zlib.h" > "$srcdir/$_realname/LICENSE"
+    cd "$srcdir/$_realname" || return 1
+    patch -p1 -i "$srcdir/04-fix-largefile-support.patch"
+    patch -p1 -i "$srcdir/cmake_dont_build_more_than_needed.patch"
+    # shellcheck disable=SC2016
+    sed -i 's#-L${sharedlibdir}##' zlib.pc.in
+}
+
+build() {
+    MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
+        "${MINGW_PREFIX}/bin/cmake" -B "build-$CARCH" -S "$srcdir/$_realname" \
+        -GNinja -Wno-dev \
+        -DCMAKE_TOOLCHAIN_FILE="$LOCALDESTDIR/etc/toolchain.cmake" \
+        -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+        -DSKIP_INSTALL_FILES=ON \
+        -DSKIP_BUILD_EXAMPLES=OFF
+    cmake --build "build-$CARCH"
+}
+
+package() {
+    DESTDIR="$pkgdir" \
+        cmake --build "build-$CARCH" --target install
+    install -Dm644 "$srcdir/$_realname/LICENSE" "${pkgdir}$LOCALDESTDIR/share/licenses/${_realname}/LICENSE"
+}
