@@ -62,5 +62,6 @@ package() {
         cmake --build "build-$CARCH-shared" --target install
     DESTDIR="$pkgdir" \
         cmake --build "build-$CARCH-static" --target install
-    install -Dm644 "$srcdir/$_realname/LICENSE" "${pkgdir}$LOCALDESTDIR/share/licenses/${_realname}/LICENSE"
+    mv "$pkgdir$LOCALDESTDIR/bin/libzlib1.dll" "$pkgdir$LOCALDESTDIR/bin/zlib1.dll"
+    install -Dm644 "$srcdir/$_realname/LICENSE" "$pkgdir$LOCALDESTDIR/share/licenses/${_realname}/LICENSE"
 }
