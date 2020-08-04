@@ -97,7 +97,7 @@ set instdir=%CD%
 set build=%instdir%\build
 if not exist %build% mkdir %build%
 
-set msyspackages=base-devel git
+set msyspackages=base-devel git p7zip
 
 set mingwpackages=cmake meson dlfcn gcc clang nasm yasm pcre tools-git ninja pkg-config ccache jq
 
