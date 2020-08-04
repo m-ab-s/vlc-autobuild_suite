@@ -489,11 +489,11 @@ if not "%oldHead%"=="%newHead%" (
 endlocal
 
 rem Get suite files
-if not exist "%build%\vlc-suite_compile.sh" git checkout ${u} -- "%build%\vlc-suite_compile.sh"
 git remote get-url mabs > nul 2>&1 || git remote add -f mabs "https://github.com/m-ab-s/media-autobuild_suite.git"
 git fetch --all
 git remote set-head -a mabs
 git checkout mabs/HEAD -- "%build%\bash.sh" "%build%\media-suite_helper.sh"
+git checkout -- "%build%\vlc-suite_compile.sh" "%build%\vlc-suite_helper.sh"
 
 echo.-------------------------------------------------------------------------------
 echo.Updating pacman database...
