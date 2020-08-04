@@ -155,8 +155,8 @@ buildGlobal() {
                 "https://github.com/upx/upx/releases/download/v3.96/upx-3.96-win32.zip"; then
         do_install upx.exe /opt/bin/upx.exe
     fi
-    do_makepkg libxml2
     do_makepkg zlib
+    do_makepkg libxml2
 }
 
 buildAudio() {
