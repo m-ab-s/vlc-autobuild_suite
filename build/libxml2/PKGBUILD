@@ -7,11 +7,12 @@ pkgver=2.9.10
 pkgrel=0
 arch=('any')
 pkgdesc="XML parsing library, version 2 (git mingw-w64)"
-depends=("${MINGW_PACKAGE_PREFIX}-gcc-libs"
+depends=()
+makedepends=("${MINGW_PACKAGE_PREFIX}-gcc-libs"
     "${MINGW_PACKAGE_PREFIX}-gettext"
     "${MINGW_PACKAGE_PREFIX}-xz"
-    "${MINGW_PACKAGE_PREFIX}-zlib")
-makedepends=("${MINGW_PACKAGE_PREFIX}-gcc"
+    "${MINGW_PACKAGE_PREFIX}-zlib"
+    "${MINGW_PACKAGE_PREFIX}-gcc"
     "${MINGW_PACKAGE_PREFIX}-pkg-config"
     "${MINGW_PACKAGE_PREFIX}-python")
 options=('strip' 'staticlibs')
@@ -38,8 +39,8 @@ apply_patch_with_msg() {
 # =========================================== #
 
 pkgver() {
-  cd "${srcdir}/${_realname}" || return 1
-  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+    cd "${srcdir}/${_realname}" || return 1
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 prepare() {
