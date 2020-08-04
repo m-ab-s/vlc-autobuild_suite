@@ -38,17 +38,29 @@ prepare() {
 
 build() {
     MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
-        "${MINGW_PREFIX}/bin/cmake" -B "build-$CARCH" -S "$srcdir/$_realname" \
+        "${MINGW_PREFIX}/bin/cmake" -B "build-$CARCH-shared" -S "$srcdir/$_realname" \
         -GNinja -Wno-dev \
         -DCMAKE_TOOLCHAIN_FILE="$LOCALDESTDIR/etc/toolchain.cmake" \
         -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
         -DSKIP_INSTALL_FILES=ON \
-        -DSKIP_BUILD_EXAMPLES=OFF
-    cmake --build "build-$CARCH"
+        -DSKIP_BUILD_EXAMPLES=OFF \
+        -DBUILD_SHARED_LIBS=ON
+    cmake --build "build-$CARCH-shared"
+    MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
+        "${MINGW_PREFIX}/bin/cmake" -B "build-$CARCH-static" -S "$srcdir/$_realname" \
+        -GNinja -Wno-dev \
+        -DCMAKE_TOOLCHAIN_FILE="$LOCALDESTDIR/etc/toolchain.cmake" \
+        -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+        -DSKIP_INSTALL_FILES=ON \
+        -DSKIP_BUILD_EXAMPLES=OFF \
+        -DBUILD_SHARED_LIBS=OFF
+    cmake --build "build-$CARCH-static"
 }
 
 package() {
     DESTDIR="$pkgdir" \
-        cmake --build "build-$CARCH" --target install
+        cmake --build "build-$CARCH-shared" --target install
+    DESTDIR="$pkgdir" \
+        cmake --build "build-$CARCH-static" --target install
     install -Dm644 "$srcdir/$_realname/LICENSE" "${pkgdir}$LOCALDESTDIR/share/licenses/${_realname}/LICENSE"
 }
