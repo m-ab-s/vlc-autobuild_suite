@@ -137,7 +137,7 @@ do_makepkg() {
         export MINGW_INSTALLS=mingw64
         ;;
     esac
-    makepkg-mingw -siL --noconfirm --needed || cleanup
+    makepkg-mingw -siL --noconfirm --needed || exit 1
 }
 
 do_simple_print -p "${orange}Warning: We will not accept any issues lacking any form of logs or logs.zip!$reset"
