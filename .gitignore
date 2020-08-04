@@ -4,7 +4,6 @@
 
 ## ignore vlc-autobuild_suite folders and local specific files
 
-/build/*
 /vlc32/
 /vlc64/
 /msys64/
