@@ -648,13 +648,8 @@ goto :EOF
     echo.
     echo.alias dir='ls -la --color=auto'
     echo.alias ls='ls --color=auto'
-    if %CC%==clang (
-        echo.export CC="ccache clang"
-        echo.export CXX="ccache clang++"
-    ) else (
-        echo.export CC="ccache gcc"
-        echo.export CXX="ccache g++"
-    )
+    echo.export CC="ccache %CC%"
+    echo.export CXX="ccache %CXX%"
     echo.
     echo.CARCH="${MINGW_CHOST%%%%-*}"
     echo.CPATH="$(cygpath -m $LOCALDESTDIR/include $MINGW_PREFIX/include | tr '\n' ';')"
