@@ -634,54 +634,49 @@ goto :EOF
 
 :writeProfile
 (
-    echo.MSYSTEM=MINGW%1
+    echo.export MSYSTEM=MINGW%1
     echo.source /etc/msystem
-    echo.
+    echo.bits=%1bit
     echo.# package installation prefix and package build directory
     echo.export LOCALDESTDIR=/vlc%1 LOCALBUILDDIR=/build
     echo.
-    echo.bits='%1bit'
+    echo.alias dir='ls -la --color=auto' ls='ls --color=auto'
+    echo.export CC="ccache %CC%" CXX="ccache %CXX%"
     echo.
-    echo.alias dir='ls -la --color=auto'
-    echo.alias ls='ls --color=auto'
-    echo.export CC="ccache %CC%"
-    echo.export CXX="ccache %CXX%"
+    echo.export CARCH=${MINGW_CHOST%%%%-*}
+    echo.CPATH=$(cygpath -pm $LOCALDESTDIR/include:$MINGW_PREFIX/include)
+    echo.LIBRARY_PATH=$(cygpath -pm $LOCALDESTDIR/lib:$MINGW_PREFIX/lib)
+    echo.export LIBRARY_PATH CPATH
     echo.
-    echo.CARCH="${MINGW_CHOST%%%%-*}"
-    echo.CPATH="$(cygpath -m $LOCALDESTDIR/include $MINGW_PREFIX/include | tr '\n' ';')"
-    echo.LIBRARY_PATH="$(cygpath -m $LOCALDESTDIR/lib $MINGW_PREFIX/lib | tr '\n' ';')"
-    echo.
-    echo.CPPFLAGS="-D_FORTIFY_SOURCE=2"
+    echo.export CPPFLAGS="-D_FORTIFY_SOURCE=2"
     echo.CFLAGS="-mtune=generic -O3 -pipe -fstack-protector-strong"
     echo.[[ $CC = *gcc ]] ^&^& CFLAGS+=" -mthreads"
-    echo.CXXFLAGS="${CFLAGS}"
-    echo.LDFLAGS="-pipe -static-libgcc -static-libstdc++"
-    echo.RUSTFLAGS="-C target-feature=+crt-static"
-    echo.RUST_TRIPLE="x86_64-pc-windows-gnu"
+    echo.export CFLAGS CXXFLAGS=$CFLAGS
+    echo.export LDFLAGS="-pipe -static-libgcc -static-libstdc++"
+    echo.export RUSTFLAGS="-C target-feature=+crt-static"
+    echo.export RUST_TRIPLE=x86_64-pc-windows-gnu
     echo.
-    echo.MANPATH="${LOCALDESTDIR}/share/man:${MINGW_PREFIX}/share/man:/usr/share/man"
-    echo.INFOPATH="${LOCALDESTDIR}/share/info:${MINGW_PREFIX}/share/info:/usr/share/info"
-    echo.export DXSDK_DIR="${MINGW_PREFIX}/${MINGW_CHOST}"
-    echo.export ACLOCAL_PATH="${LOCALDESTDIR}/share/aclocal:${MINGW_PREFIX}/share/aclocal:/usr/share/aclocal"
-    echo.export PKG_CONFIG="${MINGW_PREFIX}/bin/pkg-config --static"
-    echo.export PKG_CONFIG_PATH="${LOCALDESTDIR}/lib/pkgconfig:${MINGW_PREFIX}/lib/pkgconfig"
+    echo.export MANPATH=$LOCALDESTDIR/share/man:$MINGW_PREFIX/share/man:/usr/share/man
+    echo.export INFOPATH=$LOCALDESTDIR/share/info:$MINGW_PREFIX/share/info:/usr/share/info
+    echo.export DXSDK_DIR=$MINGW_PREFIX/$MINGW_CHOST
+    echo.export ACLOCAL_PATH=$LOCALDESTDIR/share/aclocal:$MINGW_PREFIX/share/aclocal:/usr/share/aclocal
+    echo.export PKG_CONFIG=$MINGW_PREFIX/bin/pkg-config --static
+    echo.export PKG_CONFIG_PATH=$LOCALDESTDIR/lib/pkgconfig:$MINGW_PREFIX/lib/pkgconfig
     echo.
-    echo.export CPATH LIBRARY_PATH CPPFLAGS CFLAGS CXXFLAGS LDFLAGS MSYSTEM
-    echo.
-    echo.export CARGO_HOME="/opt/cargo" RUSTUP_HOME="/opt/cargo"
-    echo.export CCACHE_DIR="$HOME/.ccache"
+    echo.export CARGO_HOME=/opt/cargo RUSTUP_HOME=/opt/cargo
+    echo.export CCACHE_DIR=$HOME/.ccache
     echo.
     echo.export LANG=en_US.UTF-8
-    echo.PATH="${MINGW_PREFIX}/bin:${INFOPATH}:${MSYS2_PATH}:${ORIGINAL_PATH}"
-    echo.PATH="${LOCALDESTDIR}/bin-audio:${LOCALDESTDIR}/bin-global:${LOCALDESTDIR}/bin-video:${LOCALDESTDIR}/bin:${PATH}"
-    echo.PATH="/opt/cargo/bin:/opt/bin:${PATH}"
-    echo.source '/etc/profile.d/perlbin.sh'
+    echo.PATH=$MINGW_PREFIX/bin:$INFOPATH:$MSYS2_PATH:$ORIGINAL_PATH
+    echo.PATH=$LOCALDESTDIR/bin-audio:$LOCALDESTDIR/bin-global:$LOCALDESTDIR/bin-video:$LOCALDESTDIR/bin:$PATH
+    echo.PATH=/opt/cargo/bin:/opt/bin:$PATH
+    echo.source /etc/profile.d/perlbin.sh
     echo.export PS1='\[\033[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n\$ '
-    echo.export HOME="/home/${USERNAME}"
-    echo.GIT_GUI_LIB_DIR="$(cygpath -w /usr/share/git-gui/lib)"
+    echo.export HOME=/home/$USERNAME
+    echo.GIT_GUI_LIB_DIR=$(cygpath -w /usr/share/git-gui/lib)
     echo.export PATH GIT_GUI_LIB_DIR
     echo.stty susp undef
-    echo.export MAKEFLAGS="$cpuCount"
+    echo.export MAKEFLAGS="-j ${cpuCount:-$((($(nproc) + 2) / 2))}"
     echo.test -f "$LOCALDESTDIR/etc/custom_profile" ^&^& source "$LOCALDESTDIR/etc/custom_profile"
     echo.cd /trunk
 )>%instdir%\vlc%1\etc\profile2.local
