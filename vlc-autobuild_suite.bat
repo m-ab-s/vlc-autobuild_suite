@@ -546,20 +546,16 @@ findstr "hkps://keys.openpgp.org" "%instdir%\msys64\home\%USERNAME%\.gnupg\gpg.c
 rem loginProfile
 if exist %instdir%\msys64\etc\profile.pacnew ^
     move /y %instdir%\msys64\etc\profile.pacnew %instdir%\msys64\etc\profile
-findstr /C:"profile2.local" %instdir%\msys64\etc\profile.d\Zab-suite.sh >nul 2>&1 || (
-    echo.if [[ $MSYSTEM = MINGW32 ]]; then
-    echo.   source /vlc32/etc/profile2.local
-    echo.else
-    echo.   source /vlc64/etc/profile2.local
-    echo.fi
-)>%instdir%\msys64\etc\profile.d\Zab-suite.sh
-
-findstr /C:"LANG" %instdir%\msys64\etc\profile.d\Zab-suite.sh >nul 2>&1 || (
+(
     echo.case $- in
     echo.*i*^) ;;
     echo.*^) export LANG=en_US.UTF-8 ;;
     echo.esac
-)>>%instdir%\msys64\etc\profile.d\Zab-suite.sh
+    echo.case $MSYSTEM in
+    echo.MINGW32^) source /vlc32/etc/profile2.local ;;
+    echo.*^) source /vlc64/etc/profile2.local ;;
+    echo.esac
+)>%instdir%\msys64\etc\profile.d\Zab-suite.sh
 
 rem compileLocals
 cd %instdir%
