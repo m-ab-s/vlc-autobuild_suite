@@ -17,12 +17,14 @@ source=("git+https://git.savannah.gnu.org/git/libiconv.git"
     "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/0001-compile-relocatable-in-gnulib.mingw.patch"
     "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/0002-fix-cr-for-awk-in-configure.all.patch"
     "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/fix-pointer-buf.patch"
-    "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/iconv.pc")
+    "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/iconv.pc"
+    "https://gist.githubusercontent.com/1480c1/efe5d56ecaaddc852aca147bf625e896/raw/0001-vabs.patch")
 sha256sums=('SKIP'
     '7e905d21d670672b8a6a3bd80e5b8244b38bb7021a15fc7bdd0229125a3a68ee'
     'fe1a82f0836d65f895bebe9307bbe70ae53e5c872dd727f2042c46edc7cf060d'
     'fc1921f9d8ae21be0d1ee8a037fbb89aa066865f193a4883aa6e673827abba88'
-    '56e7ec406bf42eb66b1d972f20d229f7a76ba00c38c7b4403bf348875704baae')
+    '56e7ec406bf42eb66b1d972f20d229f7a76ba00c38c7b4403bf348875704baae'
+    'SKIP')
 
 pkgver() {
     printf "r%s.%s" "$(git -C "$srcdir/$_realname" rev-list --count HEAD)" "$(git -C "$srcdir/$_realname" rev-parse --short HEAD)"
@@ -30,12 +32,13 @@ pkgver() {
 
 prepare() {
     cd "$srcdir/$_realname" || return 1
+    git apply -3 "$srcdir/0001-vabs.patch"
     ./gitsub.sh pull
-    sed -i 's/-2.69//g' ./Makefile.devel
     ./autogen.sh
-    patch -p1 -i "$srcdir/0001-compile-relocatable-in-gnulib.mingw.patch"
-    patch -p1 -i "$srcdir/0002-fix-cr-for-awk-in-configure.all.patch"
-    patch -p1 -i "$srcdir/fix-pointer-buf.patch"
+    git apply -3 \
+        "$srcdir/fix-pointer-buf.patch" \
+        "$srcdir/0001-compile-relocatable-in-gnulib.mingw.patch" \
+        "$srcdir/0002-fix-cr-for-awk-in-configure.all.patch"
 }
 
 build() {
