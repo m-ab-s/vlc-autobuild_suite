@@ -36,9 +36,9 @@ prepare() {
     ./gitsub.sh pull
     MAKEFLAGS="-j 1" ./autogen.sh
     git apply -3 \
-        "$srcdir/fix-pointer-buf.patch" \
         "$srcdir/0001-compile-relocatable-in-gnulib.mingw.patch" \
         "$srcdir/0002-fix-cr-for-awk-in-configure.all.patch"
+    patch -p1 -i $srcdir/fix-pointer-buf.patch
 }
 
 build() {
