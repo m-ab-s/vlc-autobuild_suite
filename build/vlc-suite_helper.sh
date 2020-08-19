@@ -72,5 +72,5 @@ do_makepkg() {
         export MINGW_INSTALLS=mingw64
         ;;
     esac
-    makepkg-mingw -siL --noconfirm --needed || exit 1
+    makepkg -siL --noconfirm --needed --config "$LOCALDESTDIR/etc/makepkg.conf" || exit 1
 }

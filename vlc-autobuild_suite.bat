@@ -408,23 +408,6 @@ if not exist "%instdir%\msys64\home\%USERNAME%\.gitconfig" (
     echo.manyFiles = true
 )>"%instdir%\msys64\home\%USERNAME%\.gitconfig"
 
-rem makepkg conf
-(
-    echo.#!/usr/bin/sed -f
-    echo.s^|#PACKAGER="John Doe <john@doe.com>"^|PACKAGER="%USERNAME% <%USERNAME%@%COMPUTERNAME%>"^|
-    echo.s^|GIT_COMMITTER_NAME="makepkg"^|GIT_COMMITTER_NAME="%USERNAME%"^|
-    echo.s^|GIT_COMMITTER_EMAIL="makepkg@msys2.org"^|GIT_COMMITTER_EMAIL="%USERNAME%@%COMPUTERNAME%"^|
-    echo.s^|^^BUILDENV=(fakeroot ^!distcc color ^!ccache check ^!sign^)^|BUILDENV=(!distcc color ccache check !sign^)^|
-) > makepkg.sed
-sed -f makepkg.sed -i %instdir%\msys64\etc\makepkg.conf %instdir%\msys64\etc\makepkg_mingw64.conf %instdir%\msys64\etc\makepkg_mingw32.conf
-del makepkg.sed
-
-if "%stripFile%"=="true" (
-    sed -i 's/!strip/strip/' %instdir%\msys64\etc\makepkg.conf %instdir%\msys64\etc\makepkg_mingw64.conf %instdir%\msys64\etc\makepkg_mingw32.conf
-) else (
-    sed -i 's/strip/!strip/' %instdir%\msys64\etc\makepkg.conf %instdir%\msys64\etc\makepkg_mingw64.conf %instdir%\msys64\etc\makepkg_mingw32.conf
-)
-
 rem installbase
 if not exist %instdir%\msys64\usr\bin\make.exe (
     echo.-------------------------------------------------------------------------------
@@ -536,8 +519,8 @@ rem ------------------------------------------------------------------
 rem write config profiles:
 rem ------------------------------------------------------------------
 
-if %build32%==true call :writeProfile 32
-if %build64%==true call :writeProfile 64
+if %build32%==true call :writeProfile 32 && call :writeMakepkg 32
+if %build64%==true call :writeProfile 64 && call :writeMakepkg 64
 
 mkdir "%instdir%\msys64\home\%USERNAME%\.gnupg" > nul 2>&1
 mkdir "%instdir%\msys64\home\%USERNAME%\.gnupg\" > nul 2>&1
@@ -644,15 +627,15 @@ goto :EOF
     echo.export CC="ccache %CC%" CXX="ccache %CXX%"
     echo.
     echo.export CARCH=${MINGW_CHOST%%%%-*}
-    echo.CPATH=$(cygpath -pm $LOCALDESTDIR/include:$MINGW_PREFIX/include)
-    echo.LIBRARY_PATH=$(cygpath -pm $LOCALDESTDIR/lib:$MINGW_PREFIX/lib)
+    echo.CPATH=$(cygpath -pm $LOCALDESTDIR/include:$MINGW_PREFIX/include^)
+    echo.LIBRARY_PATH=$(cygpath -pm $LOCALDESTDIR/lib:$MINGW_PREFIX/lib^)
     echo.export LIBRARY_PATH CPATH
     echo.
-    echo.export CPPFLAGS="-D_FORTIFY_SOURCE=2"
+    echo.export CPPFLAGS="-D_FORTIFY_SOURCE=2 -D__USE_MINGW_ANSI_STDIO=1"
     echo.CFLAGS="-mtune=generic -O3 -pipe -fstack-protector-strong"
     echo.[[ $CC = *gcc ]] ^&^& CFLAGS+=" -mthreads"
     echo.export CFLAGS CXXFLAGS=$CFLAGS
-    echo.export LDFLAGS="-pipe -static-libgcc -static-libstdc++"
+    echo.export LDFLAGS="-pipe -Wl,--dynamicbase,--high-entropy-va,--nxcompat -static-libgcc -static-libstdc++"
     echo.export RUSTFLAGS="-C target-feature=+crt-static"
     echo.export RUST_TRIPLE=x86_64-pc-windows-gnu
     echo.
@@ -661,7 +644,7 @@ goto :EOF
     echo.export DXSDK_DIR=$MINGW_PREFIX/$MINGW_CHOST
     echo.export ACLOCAL_PATH=$LOCALDESTDIR/share/aclocal:$MINGW_PREFIX/share/aclocal:/usr/share/aclocal
     echo.export PKG_CONFIG=$MINGW_PREFIX/bin/pkg-config --static
-    echo.export PKG_CONFIG_PATH=$LOCALDESTDIR/lib/pkgconfig:$MINGW_PREFIX/lib/pkgconfig
+    echo.export PKG_CONFIG_PATH=$LOCALDESTDIR/lib/pkgconfig:$MINGW_PREFIX/lib/pkgconfig:$MINGW_PREFIX/share/pkgconfig
     echo.
     echo.export CARGO_HOME=/opt/cargo RUSTUP_HOME=/opt/cargo
     echo.export CCACHE_DIR=$HOME/.ccache
@@ -673,12 +656,43 @@ goto :EOF
     echo.source /etc/profile.d/perlbin.sh
     echo.export PS1='\[\033[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n\$ '
     echo.export HOME=/home/$USERNAME
-    echo.GIT_GUI_LIB_DIR=$(cygpath -w /usr/share/git-gui/lib)
+    echo.GIT_GUI_LIB_DIR=$(cygpath -w /usr/share/git-gui/lib^)
     echo.export PATH GIT_GUI_LIB_DIR
     echo.stty susp undef
-    echo.export MAKEFLAGS="-j ${cpuCount:-$((($(nproc) + 2) / 2))}"
+    echo.export MAKEFLAGS="-j${cpuCount:-$((($(nproc) + 2) / 2))}"
     echo.test -f "$LOCALDESTDIR/etc/custom_profile" ^&^& source "$LOCALDESTDIR/etc/custom_profile"
     echo.cd /trunk
-)>%instdir%\vlc%1\etc\profile2.local
+)>"%instdir%\vlc%1\etc\profile2.local"
 dos2unix -q %instdir%\vlc%1\etc\profile2.local
+goto :EOF
+
+:writeMakepkg
+(
+    echo.DLAGENTS=('http::/usr/bin/curl -qb "" -fLC - --retry 3 --retry-delay 3 -o %%o %%u'
+    echo.          'https::/usr/bin/curl -qb "" -fLC - --retry 3 --retry-delay 3 -o %%o %%u'^)
+    echo.VCSCLIENTS=(bzr::bzr git::git hg::mercurial svn::subversion^)
+    echo.GIT_COMMITTER_NAME="%USERNAME%"
+    echo.GIT_COMMITTER_EMAIL="%USERNAME%@%COMPUTERNAME%"
+    echo.gitam_mkpkg(^) { git am --committer-date-is-author-date "$@"; }
+    echo.CHOST=$MINGW_CHOST
+    echo.BUILDENV=(!distcc color ccache check !sign^)
+    if "%stripFile%"=="true" (
+        echo.OPTIONS=(strip docs !libtool staticlibs emptydirs zipman purge !debug^)
+    ) else (
+        echo.OPTIONS=(!strip docs !libtool staticlibs emptydirs zipman purge !debug^)
+    )
+    echo.INTEGRITY_CHECK=(md5^)
+    echo.STRIP_BINARIES="--strip-all"
+    echo.STRIP_SHARED="--strip-unneeded"
+    echo.STRIP_STATIC="--strip-debug"
+    echo.MAN_DIRS=({mingw,vlc}64{{,/local}{,/share},/opt/*}/{man,info}^)
+    echo.DOC_DIRS=({mingw,vlc}64/{,local/}{,share/}{doc,gtk-doc}^)
+    echo.PURGE_TARGETS=({mingw,vlc}64/{,share}/info/dir .packlist *.pod^)
+    echo.PACKAGER="%USERNAME% <%USERNAME%@%COMPUTERNAME%>"
+    echo.COMPRESSGZ=(gzip -cfn9^)
+    echo.COMPRESSZST=(zstd -c -T0 --ultra -20 -^)
+    echo.PKGEXT='.pkg.tar.zst'
+    echo.SRCEXT='.src.tar.gz'
+)>%instdir%\vlc%1\etc\makepkg.conf
+dos2unix -q %instdir%\vlc%1\etc\makepkg.conf
 goto :EOF
