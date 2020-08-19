@@ -643,7 +643,7 @@ goto :EOF
     echo.export INFOPATH=$LOCALDESTDIR/share/info:$MINGW_PREFIX/share/info:/usr/share/info
     echo.export DXSDK_DIR=$MINGW_PREFIX/$MINGW_CHOST
     echo.export ACLOCAL_PATH=$LOCALDESTDIR/share/aclocal:$MINGW_PREFIX/share/aclocal:/usr/share/aclocal
-    echo.export PKG_CONFIG=$MINGW_PREFIX/bin/pkg-config --static
+    echo.export PKG_CONFIG="$MINGW_PREFIX/bin/pkg-config --static"
     echo.export PKG_CONFIG_PATH=$LOCALDESTDIR/lib/pkgconfig:$MINGW_PREFIX/lib/pkgconfig:$MINGW_PREFIX/share/pkgconfig
     echo.
     echo.export CARGO_HOME=/opt/cargo RUSTUP_HOME=/opt/cargo
