@@ -31,7 +31,7 @@ sha256sums=('SKIP'
 apply_patch_with_msg() (
     for _fname; do
         msg2 "Applying $_fname"
-        patch -Nbp1 -i "$srcdir/$_fname"
+        git apply -3 "$srcdir/$_fname"
     done
 )
 

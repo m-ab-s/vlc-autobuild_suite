@@ -30,8 +30,9 @@ pkgver() {
 prepare() {
     grep -A 24 '^  Copyright' "$srcdir/$_realname/zlib.h" > "$srcdir/$_realname/LICENSE"
     cd "$srcdir/$_realname" || return 1
-    patch -p1 -i "$srcdir/04-fix-largefile-support.patch"
-    patch -p1 -i "$srcdir/cmake_dont_build_more_than_needed.patch"
+    git apply -3 \
+        "$srcdir/04-fix-largefile-support.patch" \
+        "$srcdir/cmake_dont_build_more_than_needed.patch"
     # shellcheck disable=SC2016
     sed -i 's#-L${sharedlibdir}##' zlib.pc.in
 }
