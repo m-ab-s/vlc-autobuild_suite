@@ -558,7 +558,7 @@ rmdir /q testmklink
 endlocal & (
 set compileArgs=--cpuCount=%cpuCount% --build32=%build32% --build64=%build64% ^
 --stripping=%stripFile% --packing=%packFile% --timeStamp=%timeStamp%
-    if %build64%==yes ( set "MSYSTEM=MINGW64" ) else set "MSYSTEM=MINGW32"
+    if %build64%==true ( set "MSYSTEM=MINGW64" ) else set "MSYSTEM=MINGW32"
     set "MSYS2_PATH_TYPE=inherit"
     set "MSYS=%MSYS%"
     set "PATH=%PATH%"
