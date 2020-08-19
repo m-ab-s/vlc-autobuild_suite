@@ -84,7 +84,6 @@ buildGlobal() {
         do_install upx.exe /opt/bin/upx.exe
     fi
     do_vcs "https://git.savannah.gnu.org/git/gnulib.git"
-    export GNULIB_SRCDIR=$LOCALBUILDDIR/gnulib-git
     do_makepkg zlib
     do_makepkg libiconv
     do_makepkg libxml2

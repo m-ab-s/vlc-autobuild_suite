@@ -660,6 +660,7 @@ goto :EOF
     echo.export PATH GIT_GUI_LIB_DIR
     echo.stty susp undef
     echo.export MAKEFLAGS="-j${cpuCount:-$((($(nproc) + 2) / 2))}"
+    echo.export GNULIB_SRCDIR=$LOCALBUILDDIR/gnulib-git
     echo.test -f "$LOCALDESTDIR/etc/custom_profile" ^&^& source "$LOCALDESTDIR/etc/custom_profile"
     echo.cd /trunk
 )>"%instdir%\vlc%1\etc\profile2.local"
