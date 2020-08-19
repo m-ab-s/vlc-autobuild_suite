@@ -51,7 +51,7 @@ build() {
         --enable-static \
         --disable-shared \
         --enable-extra-encodings \
-        --enable-relocatable \
+        --disable-relocatable \
         --disable-rpath \
         --enable-silent-rules \
         --enable-nls
