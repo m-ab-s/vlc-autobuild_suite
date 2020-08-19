@@ -72,7 +72,7 @@ package() {
 
     make install DESTDIR="$pkgdir"
     # License
-    install -Dm644 "${srcdir}/${_realname}/COPYING" "${pkgdir}${LOCALDESTDIR}/share/licenses/${_realname}/COPYING"
+    install -Dm644 "${srcdir}/${_realname}/Copyright" "${pkgdir}${LOCALDESTDIR}/share/licenses/${_realname}/Copyright"
     # Remove hard coded library path from xlm2-config and libxml-2.0.pc files
     sed -s "s|$(cygpath -am "${LOCALDESTDIR}")\/lib|\${libdir}|g" -i "${pkgdir}${LOCALDESTDIR}/bin/xml2-config" "${pkgdir}${LOCALDESTDIR}/lib/pkgconfig/libxml-2.0.pc"
 }
