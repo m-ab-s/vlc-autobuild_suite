@@ -34,7 +34,7 @@ prepare() {
     cd "$srcdir/$_realname" || return 1
     git apply -3 "$srcdir/0001-vabs.patch"
     ./gitsub.sh pull
-    ./autogen.sh
+    MAKEFLAGS="-j 1" ./autogen.sh
     git apply -3 \
         "$srcdir/fix-pointer-buf.patch" \
         "$srcdir/0001-compile-relocatable-in-gnulib.mingw.patch" \
