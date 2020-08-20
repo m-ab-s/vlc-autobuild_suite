@@ -84,7 +84,7 @@ _package_libiconv() {
 
 _package_iconv() {
     pkgdesc='Character encoding conversion utility (mingw-w64)'
-    depends=("${MINGW_PACKAGE_PREFIX}-libiconv=${pkgver}-${pkgrel}"
+    depends=("${MINGW_PACKAGE_PREFIX}-libiconv-git=${pkgver}-${pkgrel}"
         "${MINGW_PACKAGE_PREFIX}-gettext")
     license=('GPL3')
 
