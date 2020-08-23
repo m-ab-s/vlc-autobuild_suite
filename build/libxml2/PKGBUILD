@@ -1,59 +1,44 @@
 # Maintainer: Christopher Degawa <ccom@randomderp.com>
 
 _realname=libxml2
-pkgbase=mingw-w64-${_realname}
-pkgname="${MINGW_PACKAGE_PREFIX}-${_realname}-git"
+license=(MIT)
+url=http://www.xmlsoft.org/
+pkgdesc="XML parsing library, version 2 (mingw-w64)"
 pkgver=2.9.10
 pkgrel=0
-arch=('any')
-pkgdesc="XML parsing library, version 2 (git mingw-w64)"
-depends=()
-makedepends=("${MINGW_PACKAGE_PREFIX}-gcc-libs"
-    "${MINGW_PACKAGE_PREFIX}-gettext"
-    "${MINGW_PACKAGE_PREFIX}-xz"
-    "${MINGW_PACKAGE_PREFIX}-zlib"
-    "${MINGW_PACKAGE_PREFIX}-gcc"
-    "${MINGW_PACKAGE_PREFIX}-pkg-config"
-    "${MINGW_PACKAGE_PREFIX}-python")
-options=('strip' 'staticlibs')
-license=(MIT)
-provides=("${MINGW_PACKAGE_PREFIX}-${_realname}")
-conflicts=("${MINGW_PACKAGE_PREFIX}-${_realname}")
-url="http://www.xmlsoft.org/"
-source=("git+https://gitlab.gnome.org/GNOME/libxml2.git"
-    "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libxml2/0020-fix-warnings.patch"
-    "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libxml2/0023-fix-sitedir-detection.mingw.patch")
-sha256sums=('SKIP'
-    '4e8377b8bd163cc29056e45f59598e36dc6f00029166bdce4c78a88f1f9b3ed4'
-    'e93902af20bee41ca7708280f30a1d087ab8c6f86d18939bdd56789cd1a73531')
+pkgbase=mingw-w64-$_realname
+arch=(any)
+provides=("$MINGW_PACKAGE_PREFIX-$_realname")
+conflicts=("$MINGW_PACKAGE_PREFIX-$_realname")
 
-# Helper macros to help make tasks easier #
-apply_patch_with_msg() (
-    for _fname; do
-        msg2 "Applying $_fname"
-        git apply -3 "$srcdir/$_fname"
-    done
-)
-
-# =========================================== #
+makedepends=("$MINGW_PACKAGE_PREFIX-gettext"
+    "$MINGW_PACKAGE_PREFIX-xz"
+    "$MINGW_PACKAGE_PREFIX-zlib"
+    "$MINGW_PACKAGE_PREFIX-pkg-config"
+    "$MINGW_PACKAGE_PREFIX-python")
+source=(git+https://gitlab.gnome.org/GNOME/libxml2.git
+    https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libxml2/0020-fix-warnings.patch
+    https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libxml2/0023-fix-sitedir-detection.mingw.patch)
+sha256sums=(SKIP
+    4e8377b8bd163cc29056e45f59598e36dc6f00029166bdce4c78a88f1f9b3ed4
+    e93902af20bee41ca7708280f30a1d087ab8c6f86d18939bdd56789cd1a73531)
 
 pkgver() {
     printf "r%s.%s" "$(git -C "$srcdir/$_realname" rev-list --count HEAD)" "$(git -C "$srcdir/$_realname" rev-parse --short HEAD)"
 }
 
 prepare() {
-    cd "$_realname" || return 1
-    apply_patch_with_msg \
-        0020-fix-warnings.patch \
-        0023-fix-sitedir-detection.mingw.patch
-
-    autoreconf -fiv
+    git -C "$srcdir/$_realname" apply -3 \
+        "$srcdir/0020-fix-warnings.patch" \
+        "$srcdir/0023-fix-sitedir-detection.mingw.patch"
+    autoreconf -fiv "$srcdir/$_realname"
 }
 
 build() {
-    rm -rf "build-$CARCH"
-    mkdir "build-$CARCH" && cd "build-$CARCH" || return 1
-    ../${_realname}/configure \
+    rm -rf "$srcdir/build-$CARCH"
+    mkdir "$srcdir/build-$CARCH"
+    cd "$srcdir/build-$CARCH" || return 1
+    ../$_realname/configure \
         --prefix="$LOCALDESTDIR" \
         --host="$MINGW_CHOST" \
         --target="$MINGW_CHOST" \
@@ -63,16 +48,14 @@ build() {
         --enable-static \
         --disable-static \
         --with-threads=win32 \
-        CFLAGS="${CFLAGS} -DLIBXML_STATIC_FOR_DLL -DNOLIBTOOL"
+        CFLAGS="$CFLAGS -DLIBXML_STATIC_FOR_DLL -DNOLIBTOOL"
     make
 }
 
 package() {
-    cd "build-$CARCH" || return 1
-
-    make install DESTDIR="$pkgdir"
+    DESTDIR="$pkgdir" make -C "$srcdir/build-$CARCH" install
     # License
-    install -Dm644 "${srcdir}/${_realname}/Copyright" "${pkgdir}${LOCALDESTDIR}/share/licenses/${_realname}/Copyright"
+    install -Dm644 "$srcdir/$_realname/Copyright" "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/Copyright"
     # Remove hard coded library path from xlm2-config and libxml-2.0.pc files
-    sed -s "s|$(cygpath -am "${LOCALDESTDIR}")\/lib|\${libdir}|g" -i "${pkgdir}${LOCALDESTDIR}/bin/xml2-config" "${pkgdir}${LOCALDESTDIR}/lib/pkgconfig/libxml-2.0.pc"
+    sed -s "s|$(cygpath -am "$LOCALDESTDIR")\/lib|\${libdir}|g" -i "$pkgdir$LOCALDESTDIR/bin/xml2-config" "$pkgdir$LOCALDESTDIR/lib/pkgconfig/libxml-2.0.pc"
 }

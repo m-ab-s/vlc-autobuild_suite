@@ -1,25 +1,22 @@
 # Maintainer: Christopher Degawa <ccom@randomderp.com>
 
 _realname=zlib
-pkgbase=mingw-w64-$_realname
-pkgname=("$MINGW_PACKAGE_PREFIX-$_realname-git")
+license=(ZLIB)
+url=https://www.zlib.net/
+pkgdesc="Compression library implementing the deflate compression method found in gzip and PKZIP (mingw-w64)"
 pkgver=1.2.11
 pkgrel=0
+pkgbase=mingw-w64-$_realname
+pkgname=$MINGW_PACKAGE_PREFIX-$_realname-git
 arch=(any)
-pkgdesc="Compression library implementing the deflate compression method found in gzip and PKZIP (mingw-w64)"
-makedepends=("$MINGW_PACKAGE_PREFIX-gcc"
-    "$MINGW_PACKAGE_PREFIX-cmake"
-    "$MINGW_PACKAGE_PREFIX-ninja")
-options=(staticlibs)
-license=(ZLIB)
 provides=("$MINGW_PACKAGE_PREFIX-$_realname")
 conflicts=("$MINGW_PACKAGE_PREFIX-$_realname")
-url=https://www.zlib.net/
-source=(git+https://github.com/madler/zlib.git
-    https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-zlib/04-fix-largefile-support.patch
+
+makedepends=("$MINGW_PACKAGE_PREFIX-cmake"
+    "$MINGW_PACKAGE_PREFIX-ninja")
+source=("git+https://github.com/madler/zlib.git#branch=develop"
     https://raw.githubusercontent.com/microsoft/vcpkg/master/ports/zlib/cmake_dont_build_more_than_needed.patch)
 sha256sums=(SKIP
-    3b36fe536a7458af2a9a494d70d24048da10c43423fd620ed93fa0a6ddd14f78
     a51534a0a26593b305b209c87ccfc5ba38d3d35370deeda10dcfc407f12ca3af)
 
 pkgver() {
@@ -27,11 +24,8 @@ pkgver() {
 }
 
 prepare() {
-    git -C "$srcdir/$_realname" apply -3 \
-        "$srcdir/04-fix-largefile-support.patch" \
-        "$srcdir/cmake_dont_build_more_than_needed.patch"
-    # shellcheck disable=SC2016
-    sed -i 's#-L${sharedlibdir}##' "$srcdir/$_realname/zlib.pc.in"
+    git -C "$srcdir/$_realname" apply -3 "$srcdir/cmake_dont_build_more_than_needed.patch"
+    sed -i "s#-L\${sharedlibdir}##" "$srcdir/$_realname/zlib.pc.in"
 }
 
 build() {
@@ -58,10 +52,8 @@ build() {
 }
 
 package() {
-    DESTDIR="$pkgdir" \
-        "$MINGW_PREFIX/bin/cmake" --build "build-$CARCH-shared" --target install
-    DESTDIR="$pkgdir" \
-        "$MINGW_PREFIX/bin/cmake" --build "build-$CARCH-static" --target install
+    DESTDIR="$pkgdir" "$MINGW_PREFIX/bin/cmake" --build "build-$CARCH-shared" --target install
+    DESTDIR="$pkgdir" "$MINGW_PREFIX/bin/cmake" --build "build-$CARCH-static" --target install
     mv "$pkgdir$LOCALDESTDIR/bin/libzlib1.dll" "$pkgdir$LOCALDESTDIR/bin/zlib1.dll"
     grep -A 24 '^  Copyright' "$srcdir/$_realname/zlib.h" > "$srcdir/$_realname/LICENSE"
     install -Dm644 "$srcdir/$_realname/LICENSE" "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/LICENSE"
