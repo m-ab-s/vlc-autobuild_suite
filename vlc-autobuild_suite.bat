@@ -632,8 +632,7 @@ goto :EOF
     echo.LIBRARY_PATH=$(cygpath -pm $LOCALDESTDIR/lib:$MINGW_PREFIX/lib^)
     echo.export LIBRARY_PATH CPATH
     echo.
-    echo.export CPPFLAGS="-D_FORTIFY_SOURCE=2 -D__USE_MINGW_ANSI_STDIO=1"
-    echo.CFLAGS="-mtune=generic -O3 -pipe -fstack-protector-strong"
+    echo.CFLAGS="-D_FORTIFY_SOURCE=2 -D__USE_MINGW_ANSI_STDIO=1 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -mtune=generic -O3 -pipe -fstack-protector-strong"
     echo.[[ $CC = *gcc ]] ^&^& CFLAGS+=" -mthreads"
     echo.export CFLAGS CXXFLAGS=$CFLAGS
     echo.export LDFLAGS="-pipe -Wl,--dynamicbase,--high-entropy-va,--nxcompat -static-libgcc -static-libstdc++"
