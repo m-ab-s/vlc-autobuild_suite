@@ -64,7 +64,7 @@ build() {
         --disable-static \
         --with-threads=win32 \
         CFLAGS="${CFLAGS} -DLIBXML_STATIC_FOR_DLL -DNOLIBTOOL"
-    make -j "${cpuCount:-1}"
+    make
 }
 
 package() {
