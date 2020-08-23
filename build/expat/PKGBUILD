@@ -22,7 +22,7 @@ build() {
         "${MINGW_PREFIX}/bin/cmake" \
         -GNinja \
         -B "$srcdir/build-$MINGW_CHOST" \
-        -S "$srcdir/$_realname/lib$_realname" \
+        -S "$srcdir/lib$_realname/$_realname" \
         -DEXPAT_BUILD_EXAMPLES=OFF \
         -DEXPAT_BUILD_TESTS=OFF \
         -DEXPAT_SHARED_LIBS=OFF \
@@ -32,5 +32,5 @@ build() {
 
 package() {
     DESTDIR="$pkgdir" "${MINGW_PREFIX}/bin/cmake" --build "$srcdir/build-$MINGW_CHOST" --target install
-    install -Dm644 "$srcdir/$_realname/COPYING" "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/COPYING"
+    install -Dm644 "$srcdir/lib$_realname/$_realname/COPYING" "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/COPYING"
 }
