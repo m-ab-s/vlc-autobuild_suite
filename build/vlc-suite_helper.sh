@@ -72,5 +72,12 @@ do_makepkg() {
         export MINGW_INSTALLS=mingw64
         ;;
     esac
+    if type pre_makepkg > /dev/null 2>&1; then
+        pre_makepkg
+    fi
     makepkg -siL --noconfirm --needed --config "$LOCALDESTDIR/etc/makepkg.conf" || exit 1
+    if type post_makepkg > /dev/null 2>&1; then
+        post_makepkg
+    fi
+    unset pre_makepkg post_makepkg
 }
