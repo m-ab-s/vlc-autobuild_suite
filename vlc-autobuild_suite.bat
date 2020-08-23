@@ -477,6 +477,7 @@ git fetch --all
 git remote set-head -a mabs
 git checkout mabs/HEAD -- "%build%\bash.sh" "%build%\media-suite_helper.sh"
 git checkout -- "%build%\vlc-suite_compile.sh" "%build%\vlc-suite_helper.sh"
+git rm --cached "%build%\bash.sh" "%build%\media-suite_helper.sh"
 
 echo.-------------------------------------------------------------------------------
 echo.Updating pacman database...
