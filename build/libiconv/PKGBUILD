@@ -2,44 +2,43 @@
 
 _realname=libiconv
 pkgbase=mingw-w64-$_realname
-pkgname=("${MINGW_PACKAGE_PREFIX}-$_realname-git" "${MINGW_PACKAGE_PREFIX}-iconv-git")
+pkgname=("$MINGW_PACKAGE_PREFIX-$_realname-git" "$MINGW_PACKAGE_PREFIX-iconv-git")
 pkgver=1.16
 pkgrel=0
-arch=('any')
-pkgdesc="Character encoding conversion library and utility (git mingw-w64)"
-makedepends=("${MINGW_PACKAGE_PREFIX}-gcc" "${MINGW_PACKAGE_PREFIX}-gperf")
-options=('!libtool' 'staticlibs')
+arch=(any)
+pkgdesc="Character encoding conversion library and utility (mingw-w64)"
+makedepends=("$MINGW_PACKAGE_PREFIX-gcc" "$MINGW_PACKAGE_PREFIX-gperf")
+options=(!libtool staticlibs)
 license=(GPL3)
-provides=("${MINGW_PACKAGE_PREFIX}-$_realname" "${MINGW_PACKAGE_PREFIX}-iconv")
-conflicts=("${MINGW_PACKAGE_PREFIX}-$_realname" "${MINGW_PACKAGE_PREFIX}-iconv")
-url='https://www.gnu.org/software/libiconv/'
-source=("git+https://git.savannah.gnu.org/git/libiconv.git"
-    "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/0002-fix-cr-for-awk-in-configure.all.patch"
-    "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/fix-pointer-buf.patch"
-    "https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/iconv.pc"
-    "https://gist.githubusercontent.com/1480c1/efe5d56ecaaddc852aca147bf625e896/raw/0001-vabs.patch")
-sha256sums=('SKIP'
-    'fe1a82f0836d65f895bebe9307bbe70ae53e5c872dd727f2042c46edc7cf060d'
-    'fc1921f9d8ae21be0d1ee8a037fbb89aa066865f193a4883aa6e673827abba88'
-    '56e7ec406bf42eb66b1d972f20d229f7a76ba00c38c7b4403bf348875704baae'
-    'SKIP')
+provides=("$MINGW_PACKAGE_PREFIX-$_realname" "$MINGW_PACKAGE_PREFIX-iconv")
+conflicts=("$MINGW_PACKAGE_PREFIX-$_realname" "$MINGW_PACKAGE_PREFIX-iconv")
+url=https://www.gnu.org/software/libiconv/
+source=(git+https://git.savannah.gnu.org/git/libiconv.git
+    https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/0002-fix-cr-for-awk-in-configure.all.patch
+    https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/fix-pointer-buf.patch
+    https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/iconv.pc
+    https://gist.githubusercontent.com/1480c1/efe5d56ecaaddc852aca147bf625e896/raw/0001-vabs.patch)
+sha256sums=(SKIP
+    fe1a82f0836d65f895bebe9307bbe70ae53e5c872dd727f2042c46edc7cf060d
+    fc1921f9d8ae21be0d1ee8a037fbb89aa066865f193a4883aa6e673827abba88
+    56e7ec406bf42eb66b1d972f20d229f7a76ba00c38c7b4403bf348875704baae
+    SKIP)
 
 pkgver() {
     printf "r%s.%s" "$(git -C "$srcdir/$_realname" rev-list --count HEAD)" "$(git -C "$srcdir/$_realname" rev-parse --short HEAD)"
 }
 
 prepare() {
-    cd "$srcdir/$_realname" || return 1
-    git apply -3 "$srcdir/0001-vabs.patch"
-    ./gitsub.sh pull
-    MAKEFLAGS="-j 1" ./autogen.sh
-    patch -p1 -i "$srcdir/0002-fix-cr-for-awk-in-configure.all.patch"
-    patch -p1 -i $srcdir/fix-pointer-buf.patch
+    git -C "$srcdir/$_realname" apply -3 "$srcdir/0001-vabs.patch"
+    "$srcdir/$_realname/gitsub.sh" pull
+    MAKEFLAGS="-j 1" "$srcdir/$_realname/autogen.sh"
+    patch -d "$srcdir/$_realname" -p1 -i "$srcdir/0002-fix-cr-for-awk-in-configure.all.patch"
+    patch -d "$srcdir/$_realname" -p1 -i "$srcdir/fix-pointer-buf.patch"
 }
 
 build() {
-    rm -rf "$srcdir/build-${MINGW_CHOST}"
-    mkdir -p "$srcdir/build-${MINGW_CHOST}"
+    rm -rf "$srcdir/build-$MINGW_CHOST"
+    mkdir -p "$srcdir/build-$MINGW_CHOST"
     cd "$srcdir/build-$MINGW_CHOST" || return 1
 
     ../$_realname/configure \
@@ -59,46 +58,45 @@ build() {
 }
 
 _package_libiconv() {
-    pkgdesc='Character encoding conversion library (mingw-w64)'
+    pkgdesc="Character encoding conversion library (mingw-w64)"
     license=(LGPL2 documentation:GPL3) # This is LGPL except for documentation, see README
-
-    cd "$srcdir/build-$MINGW_CHOST" || return 1
-    make install DESTDIR="$pkgdir"
-    rm -fr "$pkgdir$LOCALDESTDIR"/bin/*.exe
-    rm -f "$pkgdir$LOCALDESTDIR"/lib/charset.alias
-    rm -fr "$pkgdir$LOCALDESTDIR"/share/locale
-    rm -f "$pkgdir$LOCALDESTDIR"/share/doc/libiconv/*.1.*
-    rm -fr "$pkgdir$LOCALDESTDIR"/share/man/man1
+    DESTDIR="$pkgdir" make -C "$srcdir/build-$MINGW_CHOST" install
+    rm -rf "$pkgdir$LOCALDESTDIR/bin/"*.exe \
+        "$pkgdir$LOCALDESTDIR/lib/charset.alias" \
+        "$pkgdir$LOCALDESTDIR/share/locale" \
+        "$pkgdir$LOCALDESTDIR/share/doc/libiconv/"*.1.* \
+        "$pkgdir$LOCALDESTDIR/share/man/man1"
 
     # Pkg-config file
     install -Dm644 "$srcdir/iconv.pc" "$pkgdir$LOCALDESTDIR/lib/pkgconfig/iconv.pc"
-    sed -i "s|@PREFIX@|$LOCALDESTDIR|g;s|@VERSION@|${pkgver}|g" \
+    sed -i "s|@PREFIX@|$LOCALDESTDIR|g;s|@VERSION@|$pkgver|g" \
         "$pkgdir$LOCALDESTDIR/lib/pkgconfig/iconv.pc"
 
     # Licenses
-    install -Dm644 "$srcdir/$_realname/README" "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/README"
-    install -Dm644 "$srcdir/$_realname/COPYING" "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/COPYING"
-    install -Dm644 "$srcdir/$_realname/COPYING.LIB" "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/COPYING.LIB"
+    install -Dm644 -t "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/" \
+        "$srcdir/$_realname/README" \
+        "$srcdir/$_realname/COPYING" \
+        "$srcdir/$_realname/COPYING.LIB"
     install -Dm644 "$srcdir/$_realname/libcharset/COPYING.LIB" "$pkgdir$LOCALDESTDIR/share/licenses/$_realname/libcharset/COPYING.LIB"
 }
 
 _package_iconv() {
-    pkgdesc='Character encoding conversion utility (mingw-w64)'
-    depends=("${MINGW_PACKAGE_PREFIX}-libiconv-git=${pkgver}-${pkgrel}"
-        "${MINGW_PACKAGE_PREFIX}-gettext")
-    license=('GPL3')
+    pkgdesc="Character encoding conversion utility (mingw-w64)"
+    depends=("$MINGW_PACKAGE_PREFIX-libiconv-git=$pkgver-$pkgrel"
+        "$MINGW_PACKAGE_PREFIX-gettext")
+    license=(GPL3)
 
-    cd "$srcdir/build-$MINGW_CHOST" || return 1
-    make install DESTDIR="$pkgdir"
-    rm -f "$pkgdir$LOCALDESTDIR"/bin/*.dll
-    rm -fr "$pkgdir$LOCALDESTDIR"/include
-    rm -fr "$pkgdir$LOCALDESTDIR"/lib
-    rm -f "$pkgdir$LOCALDESTDIR"/share/doc/libiconv/*.3.*
-    rm -fr "$pkgdir$LOCALDESTDIR"/share/man/man3
+    DESTDIR="$pkgdir" make -C "$srcdir/build-$MINGW_CHOST" install
+    rm -rf "$pkgdir$LOCALDESTDIR/bin/"*.dll \
+        "$pkgdir$LOCALDESTDIR/include" \
+        "$pkgdir$LOCALDESTDIR/lib" \
+        "$pkgdir$LOCALDESTDIR/share/doc/libiconv/"*.3.* \
+        "$pkgdir$LOCALDESTDIR/share/man/man3"
 
     # Licenses
-    install -Dm644 "$srcdir/$_realname/README" "$pkgdir$LOCALDESTDIR/share/licenses/iconv/README"
-    install -Dm644 "$srcdir/$_realname/COPYING" "$pkgdir$LOCALDESTDIR/share/licenses/iconv/COPYING"
+    install -Dm644 -t "$pkgdir$LOCALDESTDIR/share/licenses/iconv" \
+        "$srcdir/$_realname/README" \
+        "$srcdir/$_realname/COPYING"
 }
 
 package_mingw-w64-i686-iconv-git() { _package_iconv; }
