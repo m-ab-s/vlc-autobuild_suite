@@ -20,9 +20,10 @@ sha256sums=(SKIP)
 build() {
     MSYS2_ARG_CONV_EXCL="-DCMAKE_INSTALL_PREFIX=" \
         "${MINGW_PREFIX}/bin/cmake" \
-        -GNinja \
         -B "$srcdir/build-$MINGW_CHOST" \
         -S "$srcdir/lib$_realname/$_realname" \
+        -GNinja \
+        -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
         -DEXPAT_BUILD_EXAMPLES=OFF \
         -DEXPAT_BUILD_TESTS=OFF \
         -DEXPAT_SHARED_LIBS=OFF \
