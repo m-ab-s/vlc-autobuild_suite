@@ -31,7 +31,10 @@ pkgver() {
 prepare() {
     git -C "$srcdir/$_realname" apply -3 "$srcdir/0001-vabs.patch"
     "$srcdir/$_realname/gitsub.sh" pull
-    MAKEFLAGS="-j 1" "$srcdir/$_realname/autogen.sh"
+    (
+        cd "$srcdir/$_realname" || exit 1
+        MAKEFLAGS="-j 1" ./autogen.sh
+    )
     patch -d "$srcdir/$_realname" -p1 -i "$srcdir/0002-fix-cr-for-awk-in-configure.all.patch"
     patch -d "$srcdir/$_realname" -p1 -i "$srcdir/fix-pointer-buf.patch"
 }
