@@ -86,6 +86,7 @@ buildGlobal() {
     do_vcs "https://git.savannah.gnu.org/git/gnulib.git"
     do_makepkg zlib
     do_makepkg libiconv
+    do_makepkg expat
     do_makepkg libxml2
 }
 
