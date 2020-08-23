@@ -55,7 +55,7 @@ build() {
         --disable-rpath \
         --enable-silent-rules \
         --enable-nls
-    make -j "${cpuCount:-1}"
+    make
 }
 
 _package_libiconv() {
