@@ -25,31 +25,10 @@ while true; do
         esac
         shift
         ;;
-    --build32=*)
-        case ${1#*=} in
-        true) build32=y ;;
-        *) build32=n ;;
-        esac
-        shift
-        ;;
-    --build64=*)
-        case ${1#*=} in
-        true) build64=y ;;
-        *) build64=n ;;
-        esac
-        shift
-        ;;
     --stripping*)
         case ${1#*=} in
         true) stripping=y ;;
         *) stripping=n ;;
-        esac
-        shift
-        ;;
-    --packing*)
-        case ${1#*=} in
-        true) packing=y ;;
-        *) packing=n ;;
         esac
         shift
         ;;
@@ -66,7 +45,7 @@ while true; do
     esac
 done
 
-ccache=y logging=y
+ccache=y logging=y build32=n build64=y packing=n
 
 # shellcheck source=build/vlc-suite_helper.sh
 source "$LOCALBUILDDIR/vlc-suite_helper.sh"
@@ -76,13 +55,6 @@ do_simple_print -p "${orange}Warning: We will not accept any issues lacking any 
 buildGlobal() {
     set_title "compiling global tools"
     do_simple_print -p "${orange}Starting $bits compilation of global tools${reset}"
-
-    if [[ $packing == y && \
-        "$(/opt/bin/upx -V 2> /dev/null | head -1)" != "upx 3.96" ]] &&
-            do_wget -h 014912ea363e2d491587534c1e7efd5bc516520d8f2cdb76bb0aaf915c5db961 \
-                "https://github.com/upx/upx/releases/download/v3.96/upx-3.96-win32.zip"; then
-        do_install upx.exe /opt/bin/upx.exe
-    fi
     do_vcs "https://git.savannah.gnu.org/git/gnulib.git"
     do_makepkg zlib
     do_makepkg libiconv
@@ -123,15 +95,8 @@ buildProcess() {
 run_builds() {
     new_updates=false
     new_updates_packages=""
-    if [[ $build32 == y ]]; then
-        source /vlc32/etc/profile2.local
-        buildProcess
-    fi
-
-    if [[ $build64 == y ]]; then
-        source /vlc64/etc/profile2.local
-        buildProcess
-    fi
+    source /vlc64/etc/profile2.local
+    buildProcess
 }
 
 cd_safe "$LOCALBUILDDIR"

@@ -101,7 +101,7 @@ set msyspackages=base-devel git p7zip autoconf-archive
 
 set mingwpackages=cmake meson dlfcn gcc clang nasm yasm pcre tools-git ninja pkg-config ccache jq
 
-set iniOptions=arch CC cores strip pack timeStamp
+set iniOptions=CC cores strip timeStamp
 
 set deleteIni=0
 set ini=%build%\vlc-autobuild_suite.ini
@@ -120,28 +120,6 @@ for %%a in (%iniOptions%) do if [!%%aINI!]==[0] set deleteIni=1 && goto :endINIc
 :endINIcheck
 endlocal & set deleteIni=%deleteIni%
 if %deleteINI%==1 echo.[compiler list] >"%ini%"
-
-:selectSystem
-if %archINI%==0 (
-    echo -------------------------------------------------------------------------------
-    echo -------------------------------------------------------------------------------
-    echo.
-    echo. Select the target binaries:
-    echo. 1 = both [32 bit and 64 bit]
-    echo. 2 = 32 bit
-    echo. 3 = 64 bit
-    echo.
-    echo -------------------------------------------------------------------------------
-    echo -------------------------------------------------------------------------------
-    set /P buildEnv="Build System: "
-) else set buildEnv=%archINI%
-
-if "%buildEnv%"=="" GOTO selectSystem
-if %buildEnv% GTR 3 GOTO selectSystem
-if %buildEnv%==1 set build32=true && set build64=true
-if %buildEnv%==2 set build32=true && set build64=false
-if not defined build64 set build32=false && set build64=true
-if %deleteINI%==1 echo.arch=^%buildEnv%>>%ini%
 
 :CC
 if %CCINI%==0 (
@@ -214,32 +192,6 @@ if %stripF%==2 set stripFile=false
 if not defined stripFile set stripFile=true
 if %deleteINI%==1 echo.strip=^%stripF%>>%ini%
 
-:packEXE
-if %packINI%==0 (
-    echo -------------------------------------------------------------------------------
-    echo -------------------------------------------------------------------------------
-    echo.
-    echo. Pack compiled files?
-    echo. 1 = Yes
-    echo. 2 = No [recommended]
-    echo.
-    echo. Attention: Some security applications may detect packed binaries as malware.
-    echo. Increases delay on runtime during which files need to be unpacked.
-    echo. Makes binaries smaller at a big time cost after compiling and on runtime.
-    echo.
-    echo. If distributing the files, consider packing them with 7-zip instead.
-    echo.
-    echo -------------------------------------------------------------------------------
-    echo -------------------------------------------------------------------------------
-    set /P packF="Pack files: "
-) else set packF=%packINI%
-
-if "%packF%"=="" GOTO packEXE
-if %packF% GTR 2 GOTO packEXE
-if %packF%==1 set packFile=true
-if not defined packFile set packFile=false
-if %deleteINI%==1 echo.pack=^%packF%>>%ini%
-
 :timeStamp
 if %timeStampINI%==0 (
     echo -------------------------------------------------------------------------------
@@ -310,7 +262,7 @@ if not exist %instdir%\mintty.lnk (
     echo.-------------------------------------------------------------------------------
     call :runBash firstrun.log exit
 
-    sed -i "s/#Color/Color/" %instdir%\msys64\etc\pacman.conf
+    sed -i "s/#Color/Color/;/.*mingw32.*/d" %instdir%\msys64\etc\pacman.conf
 
     echo.-------------------------------------------------------------------------------
     echo.first update
@@ -340,14 +292,7 @@ if not exist %instdir%\mintty.lnk (
 )
 
 rem createFolders
-if %build32%==true (
-    mkdir %instdir%\vlc32 2>NUL
-    mkdir %instdir%\vlc32\etc 2>NUL
-)
-if %build64%==true (
-    mkdir %instdir%\vlc64 2>NUL
-    mkdir %instdir%\vlc64\etc 2>NUL
-)
+mkdir %instdir%\vlc64\etc 2>NUL
 
 rem checkFstab
 set fstab=%instdir%\msys64\etc\fstab
@@ -357,18 +302,7 @@ for /f "tokens=1 delims= " %%a in ('findstr trunk %fstab%') do if not [%%a]==[%i
 )
 findstr /C:"/trunk" %fstab% >nul 2>&1 || echo.%instdir%\ /trunk ntfs binary,posix=0,noacl,user 0 0 >> %fstab%
 findstr /C:"/build" %fstab% >nul 2>&1 || echo.%instdir%\build\ /build ntfs binary,posix=0,noacl,user 0 0 >> %fstab%
-if %build32%==false (
-    findstr vlc32 %fstab% >nul 2>&1 && (
-        findstr /V vlc32 %fstab% > %build%\fstab.
-        move %build%\fstab. %fstab%
-    )
-) else findstr vlc32 %fstab% >nul 2>&1 || echo.%instdir%\vlc32\ /vlc32 ntfs binary,posix=0,noacl,user 0 0 >> %fstab%
-if %build64%==false (
-    findstr vlc64 %fstab% >nul 2>&1 && (
-        findstr /V vlc64 %fstab% > %build%\fstab.
-        move %build%\fstab. %fstab%
-    )
-) else findstr vlc64 %fstab% >nul 2>&1 || echo.%instdir%\vlc64\ /vlc64 ntfs binary,posix=0,noacl,user 0 0 >> %fstab%
+findstr vlc64 %fstab% >nul 2>&1 || echo.%instdir%\vlc64\ /vlc64 ntfs binary,posix=0,noacl,user 0 0 >> %fstab%
 
 if not exist "%instdir%\msys64\home\%USERNAME%" mkdir "%instdir%\msys64\home\%USERNAME%"
 if not exist "%instdir%\home\%USERNAME%\.minttyrc" (
@@ -409,29 +343,43 @@ if not exist "%instdir%\msys64\home\%USERNAME%\.gitconfig" (
 )>"%instdir%\msys64\home\%USERNAME%\.gitconfig"
 
 rem installbase
-if not exist %instdir%\msys64\usr\bin\make.exe (
-    echo.-------------------------------------------------------------------------------
-    echo.install msys2 base system
-    echo.-------------------------------------------------------------------------------
-    title install base system
-    call :runBash pacman.log pacman -S --noconfirm --needed %msyspackages%
-)
+echo.-------------------------------------------------------------------------------
+echo.Checking base install packages
+echo.-------------------------------------------------------------------------------
+title install base system
+call :runBash pacman.log pacman -S --noconfirm --needed %msyspackages%
 
 for %%i in (%instdir%\msys64\usr\ssl\cert.pem) do if %%~zi==0 call :runBash cert.log update-ca-trust
 
 setlocal EnableDelayedExpansion
 rem installmingw
 set mingw64packages=
-set mingw32packages=
 for %%i in (%mingwpackages%) do (
-    set "mingw32packages=!mingw32packages! mingw-w64-i686-%%i"
     set "mingw64packages=!mingw64packages! mingw-w64-x86_64-%%i"
 )
 
-if %build32%==true call :getmingw 32
-if %build64%==true call :getmingw 64
+if not exist %instdir%\msys64\mingw64\bin\gcc.exe (
+    :getmingw
+    echo.-------------------------------------------------------------------------------
+    echo.install 64 bit toolchain
+    echo.-------------------------------------------------------------------------------
+    title install 64 bit compiler
+    call :runBash mingw64.log pacman -S --noconfirm --needed mingw-w64-x86_64-toolchain %mingw64packages%
+
+    if not exist %instdir%\msys64\mingw64\bin\gcc.exe (
+        echo -------------------------------------------------------------------------------
+        echo.
+        echo.MinGW64 GCC compiler isn't installed; maybe the download didn't work
+        echo.Do you want to try it again?
+        echo.
+        echo -------------------------------------------------------------------------------
+        set /P try="try again [y/n]: "
+
+        if [%try%]==[y] GOTO getmingw
+        exit
+    )
+)
 endlocal & (
-    set "mingw32packages=%mingw32packages%"
     set "mingw64packages=%mingw64packages%"
 )
 
@@ -484,19 +432,15 @@ echo.Updating pacman database...
 echo.-------------------------------------------------------------------------------
 
 pacman -Syy
-set "packagestoinstall=%msyspackages%"
-
-if %build32%==true set "packagestoinstall=%mingw32packages%"
-if %build64%==true set "packagestoinstall=%mingw64packages%"
-pacman -Qi %packagestoinstall% > nul 2>&1 || (
+pacman -Qi %msyspackages% %mingw64packages% > nul 2>&1 || (
     echo.-------------------------------------------------------------------------------
     echo.You're missing some packages!
     echo.Do you want to install them?
     echo.-------------------------------------------------------------------------------
     echo.
-    pacman -Qi %packagestoinstall% 2>&1 > nul | sed "s/error: package '//;s/' was not found//"
+    pacman -Qi %msyspackages% %mingw64packages% 2>&1 > nul | sed "s/error: package '//;s/' was not found//"
     set /P yn="install packs [y/N]? "
-    if "%yn%"=="y" pacman -S --needed --noconfirm %packagestoinstall%
+    if "%yn%"=="y" pacman -S --needed --noconfirm %msyspackages% %mingw64packages%
 )
 
 bash -lc 'type rustup' > nul 2>&1 && (
@@ -520,109 +464,12 @@ rem ------------------------------------------------------------------
 rem write config profiles:
 rem ------------------------------------------------------------------
 
-if %build32%==true call :writeProfile 32 && call :writeMakepkg 32
-if %build64%==true call :writeProfile 64 && call :writeMakepkg 64
-
-mkdir "%instdir%\msys64\home\%USERNAME%\.gnupg" > nul 2>&1
-mkdir "%instdir%\msys64\home\%USERNAME%\.gnupg\" > nul 2>&1
-findstr "hkps://keys.openpgp.org" "%instdir%\msys64\home\%USERNAME%\.gnupg\gpg.conf" >nul 2>&1 || echo.keyserver hkps://keys.openpgp.org >> "%instdir%\msys64\home\%USERNAME%\.gnupg\gpg.conf"
-
-rem loginProfile
-if exist %instdir%\msys64\etc\profile.pacnew ^
-    move /y %instdir%\msys64\etc\profile.pacnew %instdir%\msys64\etc\profile
 (
-    echo.case $- in
-    echo.*i*^) ;;
-    echo.*^) export LANG=en_US.UTF-8 ;;
-    echo.esac
-    echo.case $MSYSTEM in
-    echo.MINGW32^) source /vlc32/etc/profile2.local ;;
-    echo.*^) source /vlc64/etc/profile2.local ;;
-    echo.esac
-)>%instdir%\msys64\etc\profile.d\Zab-suite.sh
-
-rem compileLocals
-cd %instdir%
-title VABSbat
-if exist %build%\compilation_failed del %build%\compilation_failed
-if exist %build%\fail_comp del %build%\compilation_failed
-
-REM Test mklink availability
-set "MSYS="
-mkdir testmklink 2>nul
-mklink /d linkedtestmklink testmklink >nul 2>&1 && (
-    set MSYS="winsymlinks:nativestrict"
-    rmdir /q linkedtestmklink
-)
-rmdir /q testmklink
-
-endlocal & (
-set compileArgs=--cpuCount=%cpuCount% --build32=%build32% --build64=%build64% ^
---stripping=%stripFile% --packing=%packFile% --timeStamp=%timeStamp%
-    if %build64%==true ( set "MSYSTEM=MINGW64" ) else set "MSYSTEM=MINGW32"
-    set "MSYS2_PATH_TYPE=inherit"
-    set "MSYS=%MSYS%"
-    set "PATH=%PATH%"
-    set "build=%build%"
-    set "instdir=%instdir%"
-)
-echo.-------------------------------------------------------------------------------
-echo.Running compilation
-echo.-------------------------------------------------------------------------------
-call :runBash compile.log /build/vlc-suite_compile.sh %compileArgs%
-exit /B %ERRORLEVEL%
-endlocal
-goto :EOF
-
-:runBash
-setlocal enabledelayedexpansion
-set "log=%1"
-shift
-set args=%*
-set arg=!args:%log% =!
-if "%log%"=="""" (
-    start "bash" /B /LOW /WAIT bash "%build%\bash.sh" "/dev/null" "%arg%"
-) else (
-    start "bash" /B /LOW /WAIT bash "%build%\bash.sh" "%build%\%log%" "%arg%"
-)
-endlocal
-goto :EOF
-
-:getmingw
-setlocal
-if exist %instdir%\msys64\mingw%1\bin\gcc.exe GOTO :EOF
-echo.-------------------------------------------------------------------------------
-echo.install %1 bit toolchain
-echo.-------------------------------------------------------------------------------
-title install %1 bit compiler
-if "%1"=="32" (
-    call :runBash mingw32.log pacman -S --noconfirm --needed mingw-w64-i686-toolchain %mingw32packages%
-) else (
-    call :runBash mingw64.log pacman -S --noconfirm --needed mingw-w64-x86_64-toolchain %mingw64packages%
-)
-
-if not exist %instdir%\msys64\mingw%1\bin\gcc.exe (
-    echo -------------------------------------------------------------------------------
-    echo.
-    echo.MinGW%1 GCC compiler isn't installed; maybe the download didn't work
-    echo.Do you want to try it again?
-    echo.
-    echo -------------------------------------------------------------------------------
-    set /P try="try again [y/n]: "
-
-    if [%try%]==[y] GOTO getmingw %1
-    exit
-)
-endlocal
-goto :EOF
-
-:writeProfile
-(
-    echo.export MSYSTEM=MINGW%1
+    echo.export MSYSTEM=MINGW64
     echo.source /etc/msystem
-    echo.bits=%1bit
+    echo.bits=64bit
     echo.# package installation prefix and package build directory
-    echo.export LOCALDESTDIR=/vlc%1 LOCALBUILDDIR=/build
+    echo.export LOCALDESTDIR=/vlc64 LOCALBUILDDIR=/build
     echo.
     echo.alias dir='ls -la --color=auto' ls='ls --color=auto'
     echo.export CC="ccache %CC%" CXX="ccache %CXX%"
@@ -663,11 +510,9 @@ goto :EOF
     echo.export GNULIB_SRCDIR=$LOCALBUILDDIR/gnulib-git
     echo.test -f "$LOCALDESTDIR/etc/custom_profile" ^&^& source "$LOCALDESTDIR/etc/custom_profile"
     echo.cd /trunk
-)>"%instdir%\vlc%1\etc\profile2.local"
-dos2unix -q %instdir%\vlc%1\etc\profile2.local
-goto :EOF
+)>"%instdir%\vlc64\etc\profile2.local"
+dos2unix -q %instdir%\vlc64\etc\profile2.local
 
-:writeMakepkg
 (
     echo.DLAGENTS=('http::/usr/bin/curl -qb "" -fLC - --retry 3 --retry-delay 3 -o %%o %%u'
     echo.          'https::/usr/bin/curl -qb "" -fLC - --retry 3 --retry-delay 3 -o %%o %%u'^)
@@ -677,11 +522,13 @@ goto :EOF
     echo.gitam_mkpkg(^) { git am --committer-date-is-author-date "$@"; }
     echo.CHOST=$MINGW_CHOST
     echo.BUILDENV=(!distcc color ccache check !sign^)
+    echo.OPTIONS=(
     if "%stripFile%"=="true" (
-        echo.OPTIONS=(strip docs !libtool staticlibs emptydirs zipman purge !debug^)
+        echo.strip
     ) else (
-        echo.OPTIONS=(!strip docs !libtool staticlibs emptydirs zipman purge !debug^)
+        echo.!strip
     )
+    echo.docs !libtool staticlibs emptydirs zipman purge !debug^)
     echo.INTEGRITY_CHECK=(md5^)
     echo.STRIP_BINARIES="--strip-all"
     echo.STRIP_SHARED="--strip-unneeded"
@@ -694,6 +541,64 @@ goto :EOF
     echo.COMPRESSZST=(zstd -c -T0 --ultra -20 -^)
     echo.PKGEXT='.pkg.tar.zst'
     echo.SRCEXT='.src.tar.gz'
-)>%instdir%\vlc%1\etc\makepkg.conf
-dos2unix -q %instdir%\vlc%1\etc\makepkg.conf
+)>%instdir%\vlc64\etc\makepkg.conf
+dos2unix -q %instdir%\vlc64\etc\makepkg.conf
+
+mkdir "%instdir%\msys64\home\%USERNAME%\.gnupg" > nul 2>&1
+findstr "hkps://keys.openpgp.org" "%instdir%\msys64\home\%USERNAME%\.gnupg\gpg.conf" >nul 2>&1 || echo.keyserver hkps://keys.openpgp.org >> "%instdir%\msys64\home\%USERNAME%\.gnupg\gpg.conf"
+
+rem loginProfile
+if exist %instdir%\msys64\etc\profile.pacnew ^
+    move /y %instdir%\msys64\etc\profile.pacnew %instdir%\msys64\etc\profile
+(
+    echo.case $- in
+    echo.*i*^) ;;
+    echo.*^) export LANG=en_US.UTF-8 ;;
+    echo.esac
+    echo.source /vlc64/etc/profile2.local
+)>%instdir%\msys64\etc\profile.d\Zab-suite.sh
+
+rem compileLocals
+cd %instdir%
+title VABSbat
+del %build%\compilation_failed %build%\compilation_failed > nul 2>&1
+
+REM Test mklink availability
+set "MSYS="
+mkdir testmklink 2>nul
+mklink /d linkedtestmklink testmklink >nul 2>&1 && (
+    set MSYS="winsymlinks:nativestrict"
+    rmdir /q linkedtestmklink
+)
+rmdir /q testmklink
+
+endlocal & (
+set compileArgs=--cpuCount=%cpuCount% --stripping=%stripFile% --timeStamp=%timeStamp%
+    set "MSYSTEM=MINGW64"
+    set "MSYS2_PATH_TYPE=inherit"
+    set "MSYS=%MSYS%"
+    set "PATH=%PATH%"
+    set "build=%build%"
+    set "instdir=%instdir%"
+)
+echo.-------------------------------------------------------------------------------
+echo.Running compilation
+echo.-------------------------------------------------------------------------------
+call :runBash compile.log /build/vlc-suite_compile.sh %compileArgs%
+exit /B %ERRORLEVEL%
+endlocal
+goto :EOF
+
+:runBash
+setlocal enabledelayedexpansion
+set "log=%1"
+shift
+set args=%*
+set arg=!args:%log% =!
+if "%log%"=="""" (
+    start "bash" /B /LOW /WAIT bash "%build%\bash.sh" "/dev/null" "%arg%"
+) else (
+    start "bash" /B /LOW /WAIT bash "%build%\bash.sh" "%build%\%log%" "%arg%"
+)
+endlocal
 goto :EOF
