@@ -47,10 +47,10 @@ cleanup() {
     zip_logs
     echo "Make sure the suite is up-to-date before reporting an issue. It might've been fixed already."
     do_prompt "Try running the build again at a later time."
+    trap - SIGINT EXIT
     case "$-" in
     *i*) return 1 ;;
     *)
-        trap - SIGINT EXIT
         exit 1
         ;;
     esac
@@ -62,16 +62,7 @@ do_makepkg() {
     [[ -d $LOCALBUILDDIR/$1 ]] || git -C /trunk checkout "@{u}" -- "${LOCALBUILDDIR#/}/$1"
     [[ -f $LOCALBUILDDIR/$1/PKGBUILD ]] || return 1
     cd_safe "$LOCALBUILDDIR/$1"
-    case $bits in
-    32bit)
-        rm -rf ./*-i686-*.log
-        export MINGW_INSTALLS=mingw32
-        ;;
-    *)
-        rm -rf ./*-x86_64-*.log
-        export MINGW_INSTALLS=mingw64
-        ;;
-    esac
+    rm -rf ./*-x86_64-*.log
     if type pre_makepkg > /dev/null 2>&1; then
         pre_makepkg
     fi
